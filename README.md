@@ -148,6 +148,11 @@ mvn clean package
 mvn spring-boot:run
 ```
 
+5访问url
+```
+ http://localhost:8080/
+```
+
 ### 配置说明
 
 在`application.yaml`中可以配置以下参数：

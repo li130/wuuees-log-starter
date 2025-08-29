@@ -148,7 +148,7 @@ mvn clean package
 mvn spring-boot:run
 ```
 
-5访问url
+5. 访问url
 ```
  http://localhost:8080/
 ```

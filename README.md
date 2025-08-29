@@ -191,7 +191,9 @@ wuuees:
 - 日志内容展示
 - 日志文件下载
 
-可以通过浏览器直接访问应用根路径查看前端界面。
+页面ui。
+<img width="2559" height="1347" alt="image" src="https://github.com/user-attachments/assets/3c71845b-6b1c-433a-bdec-695f3227428c" />
+
 
 ## 🤝 使用方式
 

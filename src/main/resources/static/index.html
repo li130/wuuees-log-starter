@@ -1,0 +1,818 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>日志查询系统</title>
+    <style>
+      * {
+          margin: 0;
+          padding: 0;
+          box-sizing: border-box;
+        }
+     
+      body {
+          font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+          background-color: #f5f5f5;
+          color: #333;
+        }
+     
+      .container {
+          max-width: 1400px;
+          margin: 0 auto;
+          padding: 20px;
+        }
+     
+      .header {
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          color: white;
+          padding: 20px;
+          border-radius: 10px;
+          margin-bottom: 20px;
+          text-align: center;
+        }
+     
+      .search-panel {
+          background: white;
+          padding: 20px;
+          border-radius: 10px;
+          box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+          margin-bottom: 20px;
+        }
+     
+      .form-row {
+          display: flex;
+          gap: 15px;
+          margin-bottom: 15px;
+          flex-wrap: wrap;
+        }
+     
+      .form-group {
+          flex: 1;
+          min-width: 200px;
+        }
+     
+      .form-group label {
+          display: block;
+          margin-bottom: 5px;
+          font-weight: 500;
+          color: #555;
+        }
+     
+      .form-group input,
+      .form-group select {
+          width: 100%;
+          padding: 10px;
+          border: 1px solid #ddd;
+          border-radius: 5px;
+          font-size: 14px;
+        }
+     
+      .btn {
+          padding: 10px 20px;
+          border: none;
+          border-radius: 5px;
+          cursor: pointer;
+          font-size: 14px;
+          transition: all 0.3s;
+        }
+     
+      .btn-primary {
+          background: #667eea;
+          color: white;
+        }
+     
+      .btn-primary:hover {
+          background: #5a6fd8;
+        }
+     
+      .btn-success {
+          background: #28a745;
+          color: white;
+        }
+     
+      .btn-success:hover {
+          background: #218838;
+        }
+     
+      .btn-warning {
+          background: #ffc107;
+          color: #212529;
+        }
+     
+      .btn-warning:hover {
+          background: #e0a800;
+        }
+     
+      .btn-secondary {
+          background: #6c757d;
+          color: white;
+        }
+     
+      .btn-secondary:hover {
+          background: #5a6268;
+        }
+     
+      .btn-info {
+          background: #17a2b8;
+          color: white;
+        }
+     
+      .btn-info:hover {
+          background: #138496;
+        }
+     
+      .disabled {
+          opacity: 0.6;
+          cursor: not-allowed;
+        }
+     
+      .result-panel {
+          background: white;
+          border-radius: 10px;
+          box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+          overflow: hidden;
+        }
+     
+      .result-header {
+          background: #f8f9fa;
+          padding: 15px 20px;
+          border-bottom: 1px solid #dee2e6;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+        }
+     
+      .log-content {
+          max-height: 600px;
+          overflow-y: auto;
+          font-family: 'Courier New', monospace;
+          font-size: 13px;
+          line-height: 1.4;
+        }
+     
+      .log-line {
+          padding: 5px 15px;
+          border-bottom: 1px solid #f0f0f0;
+          white-space: pre-wrap;
+          word-break: break-all;
+        }
+     
+      .log-line:hover {
+          background-color: #f8f9fa;
+        }
+     
+      .log-line.error {
+          background-color: #fff5f5;
+          border-left: 3px solid #dc3545;
+        }
+     
+      .log-line.warn {
+          background-color: #fffbf0;
+          border-left: 3px solid #ffc107;
+        }
+     
+      .log-line.info {
+          background-color: #f0f8ff;
+          border-left: 3px solid #17a2b8;
+        }
+     
+      .pagination {
+          padding: 15px 20px;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          background: #f8f9fa;
+          border-top: 1px solid #dee2e6;
+        }
+     
+      .pagination-info {
+          color: #666;
+        }
+     
+      .pagination-controls {
+          display: flex;
+          gap: 10px;
+        }
+     
+      .loading {
+          text-align: center;
+          padding: 40px;
+          color: #666;
+        }
+     
+      .error-message {
+          background: #f8d7da;
+          color: #721c24;
+          padding: 15px;
+          border-radius: 5px;
+          margin: 10px 0;
+        }
+     
+      .highlight {
+          background-color: yellow;
+          font-weight: bold;
+        }
+     
+      .websocket-status {
+          padding: 5px 10px;
+          border-radius: 3px;
+          font-size: 12px;
+          font-weight: bold;
+        }
+     
+      .websocket-connected {
+          background-color: #d4edda;
+          color: #155724;
+        }
+     
+      .websocket-disconnected {
+          background-color: #f8d7da;
+          color: #721c24;
+        }
+     
+      .realtime-log-panel {
+          background: white;
+          border-radius: 10px;
+          box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+          margin-top: 20px;
+          display: none;
+        }
+     
+      .realtime-log-header {
+          background: #f8f9fa;
+          padding: 15px 20px;
+          border-bottom: 1px solid #dee2e6;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+        }
+     
+      .realtime-log-content {
+          max-height: 300px;
+          overflow-y: auto;
+          font-family: 'Courier New', monospace;
+          font-size: 13px;
+          line-height: 1.4;
+        }
+     
+      @media (max-width: 768px) {
+          .form-row {
+              flex-direction: column;
+            }
+         
+          .result-header {
+              flex-direction: column;
+              gap: 10px;
+            }
+         
+          .pagination {
+              flex-direction: column;
+              gap: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+  <div class="container">
+      <div class="header">
+        <h1>📋 日志查询系统</h1>
+        <p>轻量级日志在线查询、分析、下载工具</p>
+        <div>
+          WebSocket状态: 
+          <span id="websocketStatus" class="websocket-status websocket-disconnected">未连接</span>
+        </div>
+      </div>
+     
+      <div class="search-panel">
+        <div class="form-row">
+          <div class="form-group">
+            <label for="fileSelect">选择日志文件</label>
+            <select id="fileSelect">
+              <option value="">请选择日志文件...</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="keyword">关键字搜索</label>
+            <input type="text" id="keyword" placeholder="输入搜索关键字...">
+          </div>
+          <div class="form-group">
+            <label for="level">日志级别</label>
+            <select id="level">
+              <option value="">全部级别</option>
+              <option value="ERROR">ERROR</option>
+              <option value="WARN">WARN</option>
+              <option value="INFO">INFO</option>
+              <option value="DEBUG">DEBUG</option>
+            </select>
+          </div>
+        </div>
+       
+        <div class="form-row">
+          <div class="form-group">
+            <label for="startTime">开始时间</label>
+            <input type="datetime-local" id="startTime">
+          </div>
+          <div class="form-group">
+            <label for="endTime">结束时间</label>
+            <input type="datetime-local" id="endTime">
+          </div>
+          <div class="form-group">
+            <label for="pageSize">每页行数</label>
+            <select id="pageSize">
+              <option value="50">50</option>
+              <option value="100" selected>100</option>
+              <option value="200">200</option>
+              <option value="500">500</option>
+            </select>
+          </div>
+        </div>
+       
+        <div class="form-row">
+          <button class="btn btn-primary" onclick="searchLogs()">🔍 查询日志</button>
+          <button class="btn btn-success" onclick="downloadLogs()">📥 下载日志</button>
+          <button class="btn btn-warning" onclick="toggleRealtimeLogs()" id="realtimeBtn">📡 实时推送</button>
+          <button class="btn btn-secondary" onclick="toggleReverseOrder()" id="reverseBtn">⬇️ 正序显示</button>
+        </div>
+      </div>
+     
+      <div class="result-panel" id="resultPanel" style="display: none;">
+        <div class="result-header">
+          <div class="result-info" id="resultInfo"></div>
+          <div class="result-actions">
+            <button class="btn btn-primary" onclick="refreshLogs()">🔄 刷新</button>
+          </div>
+        </div>
+       
+        <div class="log-content" id="logContent"></div>
+       
+        <div class="pagination" id="pagination"></div>
+      </div>
+      
+      <div class="realtime-log-panel" id="realtimeLogPanel">
+        <div class="realtime-log-header">
+          <div>实时日志推送</div>
+          <div>
+            <button class="btn btn-danger" onclick="clearRealtimeLogs()">🗑️ 清空</button>
+          </div>
+        </div>
+        <div class="realtime-log-content" id="realtimeLogContent"></div>
+      </div>
+    </div>
+ 
+  <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/stompjs@2/lib/stomp.min.js"></script>
+  <script>
+  // 全局变量
+  let currentPage = 1;
+  let totalPages = 1;
+  let currentQuery = {};
+  let stompClient = null;
+  let connected = false;
+  let isMonitoring = false;
+  let currentMonitoringFile = null;
+  let isReverseOrder = false; // 添加倒序显示标志，默认不选中
+
+  // 页面加载完成后初始化
+  document.addEventListener('DOMContentLoaded', function() {
+    loadLogFiles();
+    connectWebSocket();
+
+    // 绑定回车键搜索
+    document.getElementById('keyword').addEventListener('keypress', function(e) {
+      if (e.key === 'Enter') {
+        searchLogs();
+      }
+    });
+  });
+
+  // 连接WebSocket
+  function connectWebSocket() {
+    const socket = new SockJS('/ws-log-monitor');
+    stompClient = Stomp.over(socket);
+    
+    stompClient.connect({}, function(frame) {
+      console.log('Connected: ' + frame);
+      connected = true;
+      document.getElementById('websocketStatus').textContent = '已连接';
+      document.getElementById('websocketStatus').className = 'websocket-status websocket-connected';
+      
+      // 订阅日志监控主题
+      stompClient.subscribe('/topic/log-monitor', function(message) {
+        handleLogMessage(JSON.parse(message.body));
+      });
+    }, function(error) {
+      console.log('WebSocket连接失败: ' + error);
+      connected = false;
+      document.getElementById('websocketStatus').textContent = '连接失败';
+      document.getElementById('websocketStatus').className = 'websocket-status websocket-disconnected';
+      
+      // 5秒后重试连接
+      setTimeout(connectWebSocket, 5000);
+    });
+  }
+
+  // 处理接收到的日志消息
+  function handleLogMessage(message) {
+    if (message.type === 'new_log_line') {
+      // 显示实时日志
+      displayRealtimeLog(message);
+    } else if (message.type === 'monitoring_started') {
+      console.log(message.message);
+    } else if (message.type === 'monitoring_stopped') {
+      console.log(message.message);
+      stopRealtimeMonitoring();
+    } else if (message.type === 'error') {
+      alert('错误: ' + message.message);
+    }
+  }
+
+  // 显示实时日志
+  function displayRealtimeLog(logData) {
+    const resultPanel = document.getElementById('resultPanel');
+    const logContent = document.getElementById('logContent');
+    
+    // 显示结果面板
+    resultPanel.style.display = 'block';
+    
+    // 如果有等待提示，移除它
+    const loadingElement = logContent.querySelector('.loading');
+    if (loadingElement) {
+      logContent.removeChild(loadingElement);
+    }
+    
+    // 创建日志行
+    const logLine = document.createElement('div');
+    logLine.className = 'log-line ' + (logData.level ? logData.level.toLowerCase() : '');
+    logLine.innerHTML = `
+      <div><strong>[${logData.timestamp}] [${logData.level}]</strong> ${escapeHtml(logData.rawContent)}</div>
+    `;
+    
+    // 添加到顶部（prepend）
+    logContent.insertBefore(logLine, logContent.firstChild);
+    
+    // 限制显示数量，防止过多占用内存
+    if (logContent.children.length > 1000) {
+      logContent.removeChild(logContent.lastChild);
+    }
+    
+    // 自动滚动到顶部
+    logContent.scrollTop = 0;
+  }
+
+  // 切换实时日志推送
+  function toggleRealtimeLogs() {
+    if (isMonitoring) {
+      stopRealtimeMonitoring();
+    } else {
+      startRealtimeMonitoring();
+    }
+  }
+
+  // 开始实时监控
+  function startRealtimeMonitoring() {
+    const fileName = document.getElementById('fileSelect').value;
+    if (!fileName) {
+      alert('请先选择日志文件');
+      return;
+    }
+    
+    if (stompClient && connected) {
+      // 清空现有内容
+      document.getElementById('logContent').innerHTML = '';
+      
+      currentMonitoringFile = fileName;
+      stompClient.send("/app/start-monitoring", {}, JSON.stringify({
+        'fileName': fileName
+      }));
+      
+      isMonitoring = true;
+      document.getElementById('realtimeBtn').textContent = '⏹️ 停止推送';
+      document.getElementById('realtimeBtn').className = 'btn btn-danger';
+      
+      // 禁用正序/倒序按钮
+      const reverseBtn = document.getElementById('reverseBtn');
+      reverseBtn.disabled = true;
+      reverseBtn.className = 'btn btn-secondary disabled';
+      
+      // 更新结果面板信息
+      const resultInfo = document.getElementById('resultInfo');
+      resultInfo.innerHTML = `
+        📄 实时文件: ${fileName} |
+        📡 状态: 实时推送中
+      `;
+      
+      // 显示结果面板
+      document.getElementById('resultPanel').style.display = 'block';
+      
+      // 添加提示信息，告知用户正在等待实时日志
+      const logContent = document.getElementById('logContent');
+      const loadingDiv = document.createElement('div');
+      loadingDiv.className = 'loading';
+      loadingDiv.textContent = '📡 等待实时日志...';
+      logContent.appendChild(loadingDiv);
+    } else {
+      alert('WebSocket未连接，请稍后重试');
+    }
+  }
+
+  // 停止实时监控
+  function stopRealtimeMonitoring() {
+    if (stompClient && connected) {
+      stompClient.send("/app/stop-monitoring", {}, {});
+    }
+    
+    isMonitoring = false;
+    currentMonitoringFile = null;
+    document.getElementById('realtimeBtn').textContent = '📡 实时推送';
+    document.getElementById('realtimeBtn').className = 'btn btn-warning';
+    
+    // 启用正序/倒序按钮
+    const reverseBtn = document.getElementById('reverseBtn');
+    reverseBtn.disabled = false;
+    // 根据当前状态设置按钮样式
+    if (isReverseOrder) {
+      reverseBtn.className = 'btn btn-info';
+    } else {
+      reverseBtn.className = 'btn btn-secondary';
+    }
+  }
+
+  // 清空实时日志
+  function clearRealtimeLogs() {
+    document.getElementById('realtimeLogContent').innerHTML = '';
+  }
+
+  // 加载日志文件列表
+  async function loadLogFiles() {
+    try {
+      const response = await fetch('/api/logs/files');
+      const files = await response.json();
+
+      const select = document.getElementById('fileSelect');
+      select.innerHTML = '<option value="">请选择日志文件...</option>';
+
+      files.forEach(file => {
+        const option = document.createElement('option');
+        option.value = file.name;
+        option.textContent = `${file.name} (${formatFileSize(file.size)}, ${formatDate(file.lastModified)})`;
+        select.appendChild(option);
+      });
+
+    } catch (error) {
+      console.error('加载文件列表失败:', error);
+      showError('加载文件列表失败，请检查服务器连接');
+    }
+  }
+
+  // 搜索日志
+  async function searchLogs(page = 1) {
+    const fileName = document.getElementById('fileSelect').value;
+    if (!fileName) {
+      alert('请先选择日志文件');
+      return;
+    }
+
+    const query = {
+      fileName: fileName,
+      page: page,
+      pageSize: parseInt(document.getElementById('pageSize').value),
+      keyword: document.getElementById('keyword').value,
+      level: document.getElementById('level').value,
+      startTime: document.getElementById('startTime').value,
+      endTime: document.getElementById('endTime').value,
+      reverse: isReverseOrder // 使用按钮状态代替复选框
+    };
+
+    // 保存当前查询条件
+    currentQuery = query;
+    currentPage = page;
+
+    try {
+      showLoading();
+
+      const response = await fetch('/api/logs/query', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(query)
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+
+      const result = await response.json();
+      displayLogs(result);
+
+    } catch (error) {
+      console.error('查询日志失败:', error);
+      showError('查询日志失败: ' + error.message);
+    }
+  }
+
+  // 显示日志内容
+  function displayLogs(result) {
+    const resultPanel = document.getElementById('resultPanel');
+    const resultInfo = document.getElementById('resultInfo');
+    const logContent = document.getElementById('logContent');
+    const pagination = document.getElementById('pagination');
+
+    // 显示结果面板
+    resultPanel.style.display = 'block';
+
+    // 如果正在进行实时监控，则停止它
+    if (isMonitoring) {
+      stopRealtimeMonitoring();
+    }
+
+    // 更新结果信息
+    resultInfo.innerHTML = `
+        📄 文件: ${currentQuery.fileName} |
+        📊 总计: ${result.totalLines} 行 |
+        📦 大小: ${formatFileSize(result.fileSize)} |
+        🕒 修改时间: ${formatDateTime(result.lastModified)}
+      `;
+
+    // 显示日志内容
+    logContent.innerHTML = '';
+    if (result.lines && result.lines.length > 0) {
+      result.lines.forEach((line, index) => {
+        const lineDiv = document.createElement('div');
+        lineDiv.className = 'log-line ' + getLogLevel(line);
+        lineDiv.innerHTML = highlightKeyword(escapeHtml(line), currentQuery.keyword);
+        logContent.appendChild(lineDiv);
+      });
+    } else {
+      logContent.innerHTML = '<div class="loading">没有找到匹配的日志记录</div>';
+    }
+
+    // 更新分页信息
+    totalPages = result.totalPages;
+    updatePagination(result);
+  }
+
+  // 更新分页控件
+  function updatePagination(result) {
+    const pagination = document.getElementById('pagination');
+
+    const paginationInfo = `第 ${result.currentPage} 页，共 ${result.totalPages} 页`;
+
+    const prevDisabled = result.currentPage <= 1 ? 'disabled' : '';
+    const nextDisabled = result.currentPage >= result.totalPages ? 'disabled' : '';
+
+    pagination.innerHTML = `
+        <div class="pagination-info">${paginationInfo}</div>
+        <div class="pagination-controls">
+          <button class="btn btn-primary" onclick="searchLogs(1)" ${result.currentPage <= 1 ? 'disabled' : ''}>首页</button>
+          <button class="btn btn-primary" onclick="searchLogs(${result.currentPage - 1})" ${prevDisabled}>上一页</button>
+          <button class="btn btn-primary" onclick="searchLogs(${result.currentPage + 1})" ${nextDisabled}>下一页</button>
+          <button class="btn btn-primary" onclick="searchLogs(${result.totalPages})" ${result.currentPage >= result.totalPages ? 'disabled' : ''}>末页</button>
+        </div>
+      `;
+  }
+
+  // 下载日志
+  function downloadLogs() {
+    const fileName = document.getElementById('fileSelect').value;
+    if (!fileName) {
+      alert('请先选择日志文件');
+      return;
+    }
+
+    const params = new URLSearchParams();
+
+    const keyword = document.getElementById('keyword').value;
+    const level = document.getElementById('level').value;
+    const startTime = document.getElementById('startTime').value;
+    const endTime = document.getElementById('endTime').value;
+
+    if (keyword) params.append('keyword', keyword);
+    if (level) params.append('level', level);
+    if (startTime) params.append('startTime', startTime);
+    if (endTime) params.append('endTime', endTime);
+
+    const url = `/api/logs/download/${encodeURIComponent(fileName)}?${params.toString()}`;
+
+    // 创建隐藏的下载链接
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = fileName;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+
+  // 刷新日志
+  function refreshLogs() {
+    // 如果正在进行实时监控，则刷新实时监控内容
+    if (isMonitoring && currentMonitoringFile) {
+      // 重新开始实时监控（会自动停止之前的监控）
+      startRealtimeMonitoring();
+    } else if (currentQuery.fileName) {
+      // 否则执行普通查询刷新
+      searchLogs(currentPage);
+    }
+  }
+
+  // 显示加载状态
+  function showLoading() {
+    const resultPanel = document.getElementById('resultPanel');
+    const logContent = document.getElementById('logContent');
+
+    resultPanel.style.display = 'block';
+    logContent.innerHTML = '<div class="loading">🔄 正在加载日志...</div>';
+  }
+
+  // 显示错误信息
+  function showError(message) {
+    const resultPanel = document.getElementById('resultPanel');
+    const logContent = document.getElementById('logContent');
+
+    resultPanel.style.display = 'block';
+    logContent.innerHTML = `<div class="error-message">❌ ${message}</div>`;
+  }
+
+  // 获取日志级别样式
+  function getLogLevel(line) {
+    if (line.includes('ERROR')) return 'error';
+    if (line.includes('WARN')) return 'warn';
+    if (line.includes('INFO')) return 'info';
+    return '';
+  }
+
+  // 高亮关键字
+  function highlightKeyword(text, keyword) {
+    if (!keyword) return text;
+
+    const regex = new RegExp(`(${escapeRegex(keyword)})`, 'gi');
+    return text.replace(regex, '<span class="highlight">$1</span>');
+  }
+
+  // 转义HTML
+  function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+  }
+
+  // 转义正则表达式特殊字符
+  function escapeRegex(string) {
+    return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  }
+
+  // 格式化文件大小
+  function formatFileSize(bytes) {
+    if (bytes === 0) return '0 B';
+
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  }
+
+  // 格式化日期
+  function formatDate(timestamp) {
+    return new Date(timestamp).toLocaleDateString('zh-CN');
+  }
+
+  // 格式化日期时间
+  function formatDateTime(dateTimeStr) {
+    return new Date(dateTimeStr).toLocaleString('zh-CN');
+  }
+  
+  // 页面关闭时断开WebSocket连接
+  window.addEventListener('beforeunload', function() {
+    if (stompClient) {
+      stompClient.disconnect();
+    }
+  });
+
+  // 切换倒序显示
+  function toggleReverseOrder() {
+    const fileName = document.getElementById('fileSelect').value;
+    if (!fileName) {
+      alert('请先选择日志文件');
+      return;
+    }
+    
+    isReverseOrder = !isReverseOrder;
+    const reverseBtn = document.getElementById('reverseBtn');
+    if (isReverseOrder) {
+      reverseBtn.textContent = '⬆️ 倒序显示';
+      reverseBtn.className = 'btn btn-info';
+    } else {
+      reverseBtn.textContent = '⬇️ 正序显示';
+      reverseBtn.className = 'btn btn-secondary';
+    }
+    
+    // 如果已经有查询结果，则立即重新查询以应用新的排序
+    if (currentQuery && currentQuery.fileName) {
+      searchLogs(currentPage);
+    }
+  }
+</script>
+</body>
+</html>

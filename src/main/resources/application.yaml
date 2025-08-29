@@ -1,0 +1,37 @@
+server:
+ port: 8080
+ servlet:
+  context-path: /
+
+spring:
+ application:
+  name: log-viewer
+ web:
+  resources:
+   static-locations: classpath:/static/
+
+
+# ????
+logging:
+ level:
+  com.example.logviewer: DEBUG
+ pattern:
+  file: "%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%thread] %logger{36} - %msg%n"
+ file:
+  name: ./logs/app.log
+ logback:
+  rollingpolicy:
+   max-file-size: 10MB
+   max-history: 30
+
+# ???????
+wuuees:
+ log:
+  viewer:
+   log-path: ./logs # ??????
+   allowed-extensions:
+    - .log
+    - .txt
+   max-lines: 1000  # ????????
+   max-file-size: 100 # ??????(MB)
+   enable-security: true # ??????
